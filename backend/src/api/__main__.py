@@ -5,7 +5,7 @@ import numpy
 import psycopg2
 import psycopg2.extras
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, HTTPException, Query, status
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -142,6 +142,26 @@ async def add_person(data: PersonPayload):
             logger.warn("Failed to insert person record")
 
         conn.commit()
+
+        return {"success": success}
+
+    except psycopg2.DatabaseError as e:
+        logger.warn(f"Database error: {e}")
+
+    finally:
+        if conn:
+            db_pool.putconn(conn)
+
+
+@app.delete("/data/person/{person_id}", status_code=status.HTTP_200_OK)
+async def remove_person(person_id: str):
+    conn = None
+    try:
+        conn = get_conn()
+        success = db.delete_person(conn, person_id)
+
+        if not success:
+            logger.warn("Failed to delete person")
 
         return {"success": success}
 

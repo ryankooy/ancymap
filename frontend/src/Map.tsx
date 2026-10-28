@@ -81,12 +81,13 @@ const Map: React.FC = () => {
 
   useEffect(() => {
     const fetchData = async () => {
+      setError(null);
       try {
         const data: Data = await BackendService.getData();
         setData(data);
         setDropdownOptions(data.people);
-      } catch (error) {
-        console.error('Failed to fetch people data:', error);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch people data');
       }
     };
     fetchData();
@@ -101,10 +102,9 @@ const Map: React.FC = () => {
       setError(null);
       try {
         const data: ResultsData = await BackendService.getResultsData(selectedPersonId);
-        console.log(data) //todo:remove
         setResultsData(data);
-      } catch (error) {
-        setError(error instanceof Error ? error.message : 'Failed to fetch region data');
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to fetch region data');
         setResultsData(null);
       } finally {
         setIsLoading(false);
@@ -115,11 +115,17 @@ const Map: React.FC = () => {
   }, [selectedPersonId]);
 
   return (
-    <div style={{ padding: '20px', textAlign: 'center' }}>
-      <h1>Ancy</h1>
+    <div style={{ textAlign: 'center' }}>
+      <button
+        className="btn"
+        onClick={() => navigate('/form')}
+        style={{ marginBottom: '20px' }}
+      >
+        Update Records
+      </button>
 
       <label htmlFor="item-select" style={{ display: 'block', marginBottom: '8px' }}>
-        Select person:
+        Select a person to view their ancestry results:
       </label>
 
       <select
@@ -128,7 +134,7 @@ const Map: React.FC = () => {
         onChange={handleDropdownChange}
         style={{ padding: '8px', width: '200px', marginBottom: '20px' }}
       >
-        <option value="">-- Choose an option --</option>
+        <option value="">-- Choose a person --</option>
         {dropdownOptions.map((item) => (
           <option key={item.id} value={item.id}>
             {item.name}
@@ -160,25 +166,7 @@ const Map: React.FC = () => {
             </MapContainer>
           </div>
         )}
-
-        {!selectedPersonId && <p>Please select an item from the dropdown to load details.</p>}
       </div>
-
-      <button
-        onClick={() => navigate('/form')}
-        style={{
-          marginTop: '10px',
-          padding: '10px',
-          backgroundColor: '#0070f3',
-          color: 'white',
-          border: 'none',
-          borderRadius: '4px',
-          cursor: 'pointer',
-          fontWeight: 'bold'
-        }}
-      >
-        Add Records
-      </button>
     </div>
   );
 };

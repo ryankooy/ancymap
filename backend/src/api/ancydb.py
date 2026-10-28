@@ -103,3 +103,16 @@ def insert_results(conn, person_id, year, region_percentages) -> bool:
             insert_result(cur, person_id, region_id, year, percent)
 
         return cur.rowcount == len(region_percentages)
+
+
+def delete_person(conn, person_id) -> bool:
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            DELETE FROM core.person
+            WHERE id = %s
+            """,
+            (person_id,),
+        )
+
+        return cur.rowcount > 0

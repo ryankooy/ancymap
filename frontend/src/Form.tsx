@@ -1,7 +1,9 @@
 import React, { useState, useEffect, ChangeEvent } from 'react';
+import IconButton from '@mui/material/IconButton';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 import BackendService from './services/BackendService';
-import { Data, Person, ResultsData } from './models/Data';
+import { Data, FormSubmitResult, Person, ResultsData } from './models/Data';
 
 interface PersonFormData {
   name: string;
@@ -11,7 +13,8 @@ const Form: React.FC = () => {
   const [personFormData, setPersonFormData] = useState<PersonFormData>({ name: '' });
   //const [selectedPersonId, setSelectedPersonId] = useState<string>('');
   //const [regionData, setResultsData] = useState<ResultsData | null>(null);
-  //const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
   //const [dropdownOptions, setDropdownOptions] = useState<Person[]>([]);
 
   const handleInputChange = (
@@ -28,65 +31,41 @@ const Form: React.FC = () => {
     e.preventDefault(); // Prevents page reload
 
     let personName: string = personFormData.name;
-
-    if (!personName)
-      return;
+    if (!personName) return;
 
     // Capitalize the name
     personName = personName.charAt(0).toUpperCase() + personName.slice(1);
 
+    setSuccess(false);
+    setError(null);
+
     try {
-      const data: object = await BackendService.addPerson(personName);
-      console.log(data); //todo:remove
-    } catch (error) {
-      console.error('Failed to add person:', error);
+      const result: FormSubmitResult = await BackendService.addPerson(personName);
+
+      if (!!result && result.success) {
+        setSuccess(true);
+        setTimeout(() => setSuccess(false), 2000);
+      } else {
+        setError('Person already exists');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add person');
     }
 
-    // Optional: Reset form fields
+    // Reset form fields
     setPersonFormData({ name: '' });
   };
 
-//  useEffect(() => {
-//    const fetchData = async () => {
-//      try {
-//        const data: Data = await BackendService.getData();
-//        setData(data);
-//        setDropdownOptions(data.people);
-//      } catch (error) {
-//        console.error('Failed to fetch people data:', error);
-//      }
-//    };
-//    fetchData();
-//
-//    if (!selectedPersonId) {
-//      setResultsData(null);
-//      return;
-//    }
-//
-//    const fetchResultsData = async () => {
-//      setIsLoading(true);
-//      setError(null);
-//      try {
-//        const data: ResultsData = await BackendService.getResultsData(selectedPersonId);
-//        console.log(data) //todo:remove
-//        setResultsData(data);
-//      } catch (error) {
-//        setError(error instanceof Error ? error.message : 'Failed to fetch region data');
-//        setResultsData(null);
-//      } finally {
-//        setIsLoading(false);
-//      }
-//    };
-//
-//    fetchResultsData();
-//  }, [selectedPersonId]);
-
   return (
     <div style={{ padding: '20px', display: 'grid', placeItems: 'center' }}>
+      <IconButton onClick={() => window.history.back()} aria-label="back">
+        <ArrowBackIcon />
+      </IconButton>
+
       <h2>Add Person</h2>
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px', width: '500px' }}>
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px', alignItems: 'center', width: '500px' }}>
         <div>
-          <label htmlFor="personName" style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+          <label htmlFor="personName" style={{ display: 'block', marginBottom: '5px' }}>
             Person name:
           </label>
           <input
@@ -104,6 +83,7 @@ const Form: React.FC = () => {
         <button
           type="submit"
           style={{
+            width: '25%',
             padding: '10px',
             backgroundColor: '#0070f3',
             color: 'white',
@@ -116,6 +96,8 @@ const Form: React.FC = () => {
           Add
         </button>
       </form>
+      {success && <p style={{ color: 'green' }}>Record(s) added</p>}
+      {error && <p style={{ color: 'red' }}>Error: {error}</p>}
     </div>
   );
 };

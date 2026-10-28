@@ -1,4 +1,4 @@
-import { Data, ResultsData } from '../models/Data';
+import { Data, FormSubmitResult, ResultsData } from '../models/Data';
 
 class BackendService {
   private baseUrl: string;
@@ -36,7 +36,7 @@ class BackendService {
     }
   }
 
-  public async addPerson(personName: string): Promise<object> {
+  public async addPerson(personName: string): Promise<FormSubmitResult> {
     try {
       const response = await fetch(`${this.baseUrl}/data/person`, {
         method: 'POST',
@@ -51,10 +51,31 @@ class BackendService {
         throw new Error(`Error: ${response.status}`);
       }
 
-      const data: ResultsData = await response.json();
+      const data: FormSubmitResult = await response.json();
       return data;
     } catch (error) {
       throw new Error('Failed to add person');
+    }
+  }
+
+  public async removePerson(personId: string): Promise<FormSubmitResult> {
+    try {
+      const response = await fetch(`${this.baseUrl}/data/person/${personId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status}`);
+      }
+
+      const data: FormSubmitResult = await response.json();
+      return data;
+    } catch (error) {
+      throw new Error('Failed to remove person');
     }
   }
 

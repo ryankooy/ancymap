@@ -1,28 +1,32 @@
 export interface Result {
-    region: string;
-    macro_region: string;
-    percentage: number;
-    percentage_scaled: number;
-    location: [number, number];
+  region: string;
+  macro_region: string;
+  percentage: number;
+  percentage_scaled: number;
+  location: [number, number];
 }
 
 export interface ResultsData {
-    person: string;
-    regions: Result[];
+  person: string;
+  regions: Result[];
 }
 
 export interface Person {
-    id: string;
-    name: string;
+  id: string;
+  name: string;
 }
 
 export interface Region {
-    id: string;
-    name: string;
+  id: string;
+  name: string;
 }
 
 export interface Data {
-    people: Person[];
-    regions: Region[];
+  people: Person[];
+  regions: Region[];
+}
+
+export interface FormSubmitResult {
+  success: boolean;
 }
 
