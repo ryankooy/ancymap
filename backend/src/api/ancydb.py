@@ -17,14 +17,9 @@ def get_db_pool():
     )
 
 
-def list_records(conn, table_name):
+def run_simple_query(conn, query):
+    """Yields dictionary rows with `id` and `name` keys."""
     with conn.cursor() as cur:
-        query = sql.SQL("""
-            SELECT id, name
-            FROM core.{}
-            ORDER BY name
-            """).format(sql.Identifier(table_name))
-
         cur.execute(query)
 
         rows = cur.fetchall()
@@ -36,11 +31,24 @@ def list_records(conn, table_name):
 
 
 def list_people(conn):
-    return list_records(conn, "person")
+    query = sql.SQL("""
+        SELECT id, name
+        FROM core.person
+        ORDER BY name
+        """)
+
+    return run_simple_query(conn, query)
 
 
 def list_regions(conn):
-    return list_records(conn, "region")
+    query = sql.SQL("""
+        SELECT id, name
+        FROM core.region
+        WHERE type = 1 -- Child region
+        ORDER BY name
+        """)
+
+    return run_simple_query(conn, query)
 
 
 def get_regions_by_person(conn, person_id):
@@ -85,7 +93,7 @@ def insert_person(conn, person_name) -> bool:
         return cur.rowcount > 0
 
 
-def insert_result(cur, person_id, region_id, year, percent) -> bool:
+def insert_result(cur, person_id, year, region_id, percent) -> bool:
     cur.execute(
         """
         INSERT INTO core.result (person_id, region_id, year, percent)
@@ -100,7 +108,7 @@ def insert_result(cur, person_id, region_id, year, percent) -> bool:
 def insert_results(conn, person_id, year, region_percentages) -> bool:
     with conn.cursor() as cur:
         for region_id, percent in region_percentages.items():
-            insert_result(cur, person_id, region_id, year, percent)
+            insert_result(cur, person_id, year, region_id, percent)
 
         return cur.rowcount == len(region_percentages)
 
@@ -116,3 +124,32 @@ def delete_person(conn, person_id) -> bool:
         )
 
         return cur.rowcount > 0
+
+
+def delete_result(conn, person_id, year, region_id) -> bool:
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            DELETE FROM core.result
+            WHERE person_id = %s
+                AND year = %s
+                AND region_id = %s
+            """,
+            (person_id, year, region_id),
+        )
+
+        return cur.rowcount > 0
+
+
+def delete_results(conn, person_id, year) -> bool:
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            DELETE FROM core.result
+            WHERE person_id = %s AND year = %s
+            """,
+            (person_id, year),
+        )
+
+        return cur.rowcount > 0
+

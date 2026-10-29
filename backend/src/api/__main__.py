@@ -114,23 +114,6 @@ async def read_root():
             db_pool.putconn(conn)
 
 
-@app.get("/data")
-async def read_person_region_data(personId: str | None = None):
-    conn = None
-    try:
-        conn = get_conn()
-        regions = get_regions(conn, personId)
-
-        return {"person": personId, "regions": regions}
-
-    except psycopg2.DatabaseError as e:
-        logger.warn(f"Database error: {e}")
-
-    finally:
-        if conn:
-            db_pool.putconn(conn)
-
-
 @app.post("/data/person")
 async def add_person(data: PersonPayload):
     conn = None
@@ -138,10 +121,10 @@ async def add_person(data: PersonPayload):
         conn = get_conn()
         success = db.insert_person(conn, data.name)
 
-        if not success:
+        if success:
+            conn.commit()
+        else:
             logger.warn("Failed to insert person record")
-
-        conn.commit()
 
         return {"success": success}
 
@@ -160,10 +143,29 @@ async def remove_person(person_id: str):
         conn = get_conn()
         success = db.delete_person(conn, person_id)
 
-        if not success:
+        if success:
+            conn.commit()
+        else:
             logger.warn("Failed to delete person")
 
         return {"success": success}
+
+    except psycopg2.DatabaseError as e:
+        logger.warn(f"Database error: {e}")
+
+    finally:
+        if conn:
+            db_pool.putconn(conn)
+
+
+@app.get("/data/results")
+async def read_person_region_data(personId: str | None = None):
+    conn = None
+    try:
+        conn = get_conn()
+        regions = get_regions(conn, personId)
+
+        return {"person": personId, "regions": regions}
 
     except psycopg2.DatabaseError as e:
         logger.warn(f"Database error: {e}")
@@ -182,8 +184,11 @@ async def add_results(data: ResultsPayload):
             conn, data.person_id, data.year, data.region_percentages
         )
 
-        if not success:
+        if success:
+            conn.commit()
+        else:
             logger.warn("Failed to insert results")
+            conn.rollback()
 
         return {"success": success}
 
@@ -193,3 +198,48 @@ async def add_results(data: ResultsPayload):
     finally:
         if conn:
             db_pool.putconn(conn)
+
+
+@app.delete("/data/results/{person_id}/{year}/{region_id}", status_code=status.HTTP_200_OK)
+async def remove_result(person_id: str, year: int, region_id: str):
+    conn = None
+    try:
+        conn = get_conn()
+        success = db.delete_result(conn, person_id, year, region_id)
+
+        if success:
+            conn.commit()
+        else:
+            logger.warn("Failed to delete result")
+
+        return {"success": success}
+
+    except psycopg2.DatabaseError as e:
+        logger.warn(f"Database error: {e}")
+
+    finally:
+        if conn:
+            db_pool.putconn(conn)
+
+
+@app.delete("/data/results/{person_id}/{year}", status_code=status.HTTP_200_OK)
+async def remove_results(person_id: str, year: int):
+    conn = None
+    try:
+        conn = get_conn()
+        success = db.delete_results(conn, person_id, year)
+
+        if success:
+            conn.commit()
+        else:
+            logger.warn("Failed to delete results")
+
+        return {"success": success}
+
+    except psycopg2.DatabaseError as e:
+        logger.warn(f"Database error: {e}")
+
+    finally:
+        if conn:
+            db_pool.putconn(conn)
+

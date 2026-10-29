@@ -22,3 +22,9 @@
   background-color: #000;
 }
 
+.btn:disabled {
+  background-color: #d3d3d3;
+  cursor: not-allowed;
+  pointer-events: none; /* Extra assurance against stray mouse events */
+}
+

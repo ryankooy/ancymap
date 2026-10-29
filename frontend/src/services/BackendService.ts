@@ -1,4 +1,4 @@
-import { Data, FormSubmitResult, ResultsData } from '../models/Data';
+import { Data, FormSubmitResult, RegionPercentage, ResultsData } from '../models/Data';
 
 class BackendService {
   private baseUrl: string;
@@ -18,21 +18,6 @@ class BackendService {
       return data;
     } catch (error) {
       throw new Error('Failed to fetch people data');
-    }
-  }
-
-  public async getResultsData(personId: string): Promise<ResultsData> {
-    const params = new URLSearchParams({ personId });
-    try {
-      const response = await fetch(`${this.baseUrl}/data?${params}`);
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
-      }
-
-      const data: ResultsData = await response.json();
-      return data;
-    } catch (error) {
-      throw new Error('Failed to fetch regions data');
     }
   }
 
@@ -79,7 +64,22 @@ class BackendService {
     }
   }
 
-  public async addResults(personId: string, year: number, regionPercentages: object): Promise<object> {
+  public async getResultsData(personId: string): Promise<ResultsData> {
+    const params = new URLSearchParams({ personId });
+    try {
+      const response = await fetch(`${this.baseUrl}/data/results?${params}`);
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status}`);
+      }
+
+      const data: ResultsData = await response.json();
+      return data;
+    } catch (error) {
+      throw new Error('Failed to fetch regions data');
+    }
+  }
+
+  public async addResults(personId: string, year: number, regionPercentages: RegionPercentage[]): Promise<FormSubmitResult> {
     try {
       const response = await fetch(`${this.baseUrl}/data/results`, {
         method: 'POST',
@@ -98,12 +98,55 @@ class BackendService {
         throw new Error(`Error: ${response.status}`);
       }
 
-      const data: ResultsData = await response.json();
+      const data: FormSubmitResult = await response.json();
       return data;
     } catch (error) {
       throw new Error('Failed to add person');
     }
   }
+
+  public async removeResult(personId: string, year: number, regionId: string): Promise<FormSubmitResult> {
+    try {
+      const response = await fetch(`${this.baseUrl}/data/person/${personId}/${year}/${regionId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status}`);
+      }
+
+      const data: FormSubmitResult = await response.json();
+      return data;
+    } catch (error) {
+      throw new Error('Failed to remove person');
+    }
+  }
+
+  public async removeResults(personId: string, year: number): Promise<FormSubmitResult> {
+    try {
+      const response = await fetch(`${this.baseUrl}/data/person/${personId}/${year}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status}`);
+      }
+
+      const data: FormSubmitResult = await response.json();
+      return data;
+    } catch (error) {
+      throw new Error('Failed to remove person');
+    }
+  }
 }
 
-export default new BackendService('http://localhost:8000');
+const Service = new BackendService('http://localhost:8000');
+export default Service;

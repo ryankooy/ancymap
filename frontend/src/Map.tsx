@@ -23,16 +23,6 @@ let DefaultIcon = L.icon({
 
 L.Marker.prototype.options.icon = DefaultIcon;
 
-function normalizeToPercentage(value: number, min = 1, max = 100): number {
-  // Clamp value between min and max
-  const clamped = Math.max(min, Math.min(max, value));
-
-  // Normalize the value to a percentage (0 to 1)
-  const percentage = (clamped - min) / (max - min);
-
-  return percentage;
-}
-
 function getColorFromSpectrum(percentage: number, min = 1, max = 100): string {
   // Map percentage to a hue range (0 = red/low, 120 = green/high, or up to 360)
   // Example: Red (0) -> Yellow (60) -> Green (120)
@@ -66,10 +56,10 @@ const createCustomMarker = (opacity: number) => {
 
 const Map: React.FC = () => {
   const europeCenter: [number, number] = [54.84583, 25.30639];
-  const [data, setData] = useState<Data | null>(null);
   const [selectedPersonId, setSelectedPersonId] = useState<string>('');
-  const [regionData, setResultsData] = useState<ResultsData | null>(null);
+  const [resultsData, setResultsData] = useState<ResultsData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [dropdownOptions, setDropdownOptions] = useState<Person[]>([]);
 
@@ -84,7 +74,6 @@ const Map: React.FC = () => {
       setError(null);
       try {
         const data: Data = await BackendService.getData();
-        setData(data);
         setDropdownOptions(data.people);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch people data');
@@ -99,10 +88,16 @@ const Map: React.FC = () => {
 
     const fetchResultsData = async () => {
       setIsLoading(true);
+      setMessage(null);
       setError(null);
       try {
         const data: ResultsData = await BackendService.getResultsData(selectedPersonId);
-        setResultsData(data);
+        if (data && data.regions.length) {
+          setResultsData(data);
+        } else {
+          setResultsData(null);
+          setMessage('This person doesn\'t have results yet.');
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch region data');
         setResultsData(null);
@@ -125,7 +120,7 @@ const Map: React.FC = () => {
       </button>
 
       <label htmlFor="item-select" style={{ display: 'block', marginBottom: '8px' }}>
-        Select a person to view their ancestry results:
+        Select a person to plot their ancestry results:
       </label>
 
       <select
@@ -143,11 +138,12 @@ const Map: React.FC = () => {
       </select>
 
       <div style={{ marginTop: '10px' }}>
-        {isLoading && <p>Loading data for ID {selectedPersonId}...</p>}
+        {/*isLoading && <p>Loading data for ID {selectedPersonId}...</p>*/}
 
+        {message && <p style={{ fontWeight: 'bold' }}>{message}</p>}
         {error && <p style={{ color: 'red' }}>Error: {error}</p>}
 
-        {regionData && !isLoading && (
+        {resultsData && !isLoading && (
           <div style={{ border: '1px solid #ccc', borderRadius: '8px', overflow: 'hidden' }}>
             {/* Render map */}
             <MapContainer center={europeCenter} zoom={4} scrollWheelZoom={false}>
@@ -155,7 +151,7 @@ const Map: React.FC = () => {
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
-              {regionData.regions.map((region) => (
+              {resultsData.regions.map((region) => (
                 <Marker key={region.region} position={region.location} icon={createCustomMarker(region.percentage_scaled)}>
                   <Popup>
                     <p>{region.percentage}%</p>

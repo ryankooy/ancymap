@@ -30,3 +30,8 @@ export interface FormSubmitResult {
   success: boolean;
 }
 
+export interface RegionPercentage {
+  region_id: string;
+  percentage: number;
+}
+

@@ -32,6 +32,8 @@ CREATE TABLE core.result (
     year int NOT NULL,
     percent int NOT NULL,
 
+    CONSTRAINT unique_result
+        UNIQUE (person_id, region_id, year),
     CONSTRAINT fk_result_person
         FOREIGN KEY (person_id)
         REFERENCES core.person(id),
